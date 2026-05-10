@@ -94,6 +94,97 @@ app.put('/clientes/:id', (req,res)=>{
     })
 })
 
+//DESTINATARIO
+let destinatarios = [{id:1, nombre: 'Andrea', calle: 'Pino', numero: "2031", colonia: "Industrial"}]
+
+app.get('/destinatarios', (req,res) =>res.json(destinatarios))
+
+app.post('/destinatarios', (req,res) => {
+    const {nombre, calle, numero, colonia} = req.body
+
+    if(!nombre || nombre.trim()===''){
+        return res.status(400).json({
+            error:"El nombre es obligatorio"
+        })
+    }
+
+    if(!calle || calle.trim()===''){
+        return res.status(400).json({
+            error:"La calle es obligatoria"
+        })
+    }
+
+    if(!numero || numero.trim()===''){
+        return res.status(400).json({
+            error:"El numero es obligatorio"
+        })
+    }
+
+    if(!colonia || colonia.trim()===''){
+        return res.status(400).json({
+            error:"La colonia es obligatoria"
+        })
+    }
+
+    const nuevo = {
+        id:destinatarios.length+1, 
+        nombre,
+        calle,
+        numero,
+        colonia
+    }
+    destinatarios.push(nuevo)
+    res.status(201).json(nuevo)
+})
+
+app.delete('/destinatarios/:id', (req,res) => {
+    const idDelete=parseInt(req.params.id)
+    const index = destinatarios.findIndex(c=>c.id===idDelete)
+    if(index===-1){
+        return res.status(404).json({
+            error:"Destinatario no encontrado",
+            message:`No existe un destinatario con el id ${idDelete}`
+        })
+    }
+
+    const destinatarioEliminated=destinatarios.splice(index,1)
+
+    res.json({
+        message:"Destinatario eliminado",
+        destinatario:destinatarioEliminated[0]
+    })
+})
+
+app.get('/destinatarios/:id', (req,res) =>{
+    const id=parseInt(req.params.id)
+    const destinatario = destinatarios.find(c=>c.id===id)
+
+    if(!destinatario){
+        return res.status(404).json({
+            error:"Destinatario no encontrado"
+        })
+    }
+    res.json(destinatario)
+
+})
+
+app.put('/destinatarios/:id', (req,res)=>{
+    const id=parseInt(req.params.id)
+    const index = destinatarios.findIndex(c=>c.id===id)
+
+    if(index===-1){
+        return res.status(404).json({
+            error:"Destinatario no encontrado"
+        })
+    }
+
+    destinatarios[index] = {...destinatarios[index], ...req.body}
+    res.json({
+        message:"Destinatario actualizado",
+        destinatario: destinatarios[index]
+    })
+})
+
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`)
 })
