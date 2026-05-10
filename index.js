@@ -229,8 +229,6 @@ app.post('/pasteles', (req,res) => {
         })
     }
 
-
-
     const nuevo = {
         id:pasteles.length+1, 
         tamano,
