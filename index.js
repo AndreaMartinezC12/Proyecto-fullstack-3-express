@@ -185,6 +185,190 @@ app.put('/destinatarios/:id', (req,res)=>{
     })
 })
 
+//PASTEL
+let pasteles = [{id:1, tamano: 'grande', pan: 'vainilla', relleno:'nutella', extras:'almendra', betun:'rosa', decoracion:'flores'}]
+
+app.get('/pasteles', (req,res) =>res.json(pasteles))
+
+app.post('/pasteles', (req,res) => {
+    const {tamano, pan, relleno, extras, betun, decoracion} = req.body
+
+    if(!tamano || tamano.trim()===''){
+        return res.status(400).json({
+            error:"El tamano es obligatorio"
+        })
+    }
+
+    if (!pan || pan.trim() === '') {
+        return res.status(400).json({
+            error: "El pan es obligatorio"
+        })
+    }
+
+    if (!relleno || relleno.trim() === '') {
+        return res.status(400).json({
+            error: "El relleno es obligatorio"
+        })
+    }
+
+    if (!extras || extras.trim() === '') {
+        return res.status(400).json({
+            error: "Los extras son obligatorios"
+        })
+    }
+
+    if (!betun || betun.trim() === '') {
+        return res.status(400).json({
+            error: "El betun es obligatorio"
+        })
+    }
+
+    if (!decoracion || decoracion.trim() === '') {
+        return res.status(400).json({
+            error: "La decoracion es obligatoria"
+        })
+    }
+
+
+
+    const nuevo = {
+        id:pasteles.length+1, 
+        tamano,
+        pan,
+        relleno,
+        extras,
+        betun,
+        decoracion
+    }
+    pasteles.push(nuevo)
+    res.status(201).json(nuevo)
+})
+
+app.delete('/pasteles/:id', (req,res) => {
+    const idDelete=parseInt(req.params.id)
+    const index = pasteles.findIndex(c=>c.id===idDelete)
+    if(index===-1){
+        return res.status(404).json({
+            error:"Pastel no encontrado",
+            message:`No existe un pastel con el id ${idDelete}`
+        })
+    }
+
+    const pastelEliminated=pasteles.splice(index,1)
+
+    res.json({
+        message:"Pastel eliminado",
+        pastel:pastelEliminated[0]
+    })
+})
+
+app.get('/pasteles/:id', (req,res) =>{
+    const id=parseInt(req.params.id)
+    const pastel = pasteles.find(c=>c.id===id)
+
+    if(!pastel){
+        return res.status(404).json({
+            error:"Pastel no encontrado"
+        })
+    }
+    res.json(pastel)
+
+})
+
+app.put('/pasteles/:id', (req,res)=>{
+    const id=parseInt(req.params.id)
+    const index = pasteles.findIndex(c=>c.id===id)
+
+    if(index===-1){
+        return res.status(404).json({
+            error:"Pastel no encontrado"
+        })
+    }
+
+    pasteles[index] = {...pasteles[index], ...req.body}
+    res.json({
+        message:"Pastel actualizado",
+        pastel: pasteles[index]
+    })
+})
+
+//PAGO
+let pagos = [{id:1, total: 500 , metodo: 'tarjeta'}]
+
+app.get('/pagos', (req,res) =>res.json(pagos))
+
+app.post('/pagos', (req,res) => {
+    const {total, metodo} = req.body
+
+    if(!total || total.trim()===''){
+        return res.status(400).json({
+            error:"El total del pedido es obligatorio"
+        })
+    }
+
+    if (!metodo || metodo.trim() === '') {
+        return res.status(400).json({
+            error: "El metodo de pago es obligatorio"
+        })
+    }
+
+    const nuevo = {
+        id:pagos.length+1, 
+        total,
+        metodo
+    }
+    pagos.push(nuevo)
+    res.status(201).json(nuevo)
+})
+
+app.delete('/pagos/:id', (req,res) => {
+    const idDelete=parseInt(req.params.id)
+    const index = pagos.findIndex(c=>c.id===idDelete)
+    if(index===-1){
+        return res.status(404).json({
+            error:"Pago no encontrado",
+            message:`No existe un pago con el id ${idDelete}`
+        })
+    }
+
+    const pagoEliminated=pagos.splice(index,1)
+
+    res.json({
+        message:"Pago eliminado",
+        pago:pagoEliminated[0]
+    })
+})
+
+app.get('/pagos/:id', (req,res) =>{
+    const id=parseInt(req.params.id)
+    const pago = pagos.find(c=>c.id===id)
+
+    if(!pago){
+        return res.status(404).json({
+            error:"Pago no encontrado"
+        })
+    }
+    res.json(pago)
+
+})
+
+app.put('/pagos/:id', (req,res)=>{
+    const id=parseInt(req.params.id)
+    const index = pagos.findIndex(c=>c.id===id)
+
+    if(index===-1){
+        return res.status(404).json({
+            error:"Pago no encontrado"
+        })
+    }
+
+    pagos[index] = {...pagos[index], ...req.body}
+    res.json({
+        message:"Pago actualizado",
+        pago: pagos[index]
+    })
+})
+
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`)
 })
