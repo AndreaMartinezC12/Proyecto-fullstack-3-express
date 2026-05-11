@@ -1,112 +1,117 @@
-let pagos = [
-    {id:1, total: 500 , metodo: 'tarjeta'},
-    {id:2, total: 1500 , metodo: 'transferencia'}
-  ];
-  
-  const getPagos = (req, res) => {
-    res.json(pagos);
-  };
-  
-  const getPagoById = (req, res) => {
-    const id = parseInt(req.params.id);
-    const pago = pagos.find(p => p.id === id);
-  
-    if (!pago) {
-      return res.status(404).json({
-        error: 'Paso no encontrado',
-        message: `No existe un pago con el id ${id}`
-      });
-    }
-  
-    res.json(pago);
-  };
-  
-  const createPago = (req, res) => {
-    const {total, metodo} = req.body
+const db=require('../config/db')
 
+const getPagos=async(req,res)=>{
+  try {
+    const [rows]= await db.query('SELECT * FROM pago')
+    res.json(rows)
+  } catch (error) {
+    console.error('Error al obtener pagos', error)
+    res.status(500).json({error:'Error al obtener pagos'})
+  }
+}
+
+const getPagoById=async(req,res)=>{
+  try {
+    const id= parseInt(req.params.id)
+    const [rows] = await db.query('SELECT * FROM pago WHERE idPago =?', [id])
+
+    if(rows.length===0){
+      return res.status(404).json({error: "Pago no encontrado"})
+    }
+    res.json(rows[0])
+
+  } catch (error) {
+    console.error('Error al obtener pago', error)
+    res.status(500).json({error:'Error al obtener pago'})
+  }
+}
+
+const createPago=async(req,res)=>{
+  try {
+    const {total, metodo, Cliente_idCliente} = req.body
     if(!total || total.trim()===''){
-        return res.status(400).json({
-            error:"El total del pedido es obligatorio"
-        })
+      return res.status(400).json({
+        error:'El total es obligatorio'
+      })
     }
 
-    if (!metodo || metodo.trim() === '') {
-        return res.status(400).json({
-            error: "El metodo de pago es obligatorio"
-        })
+    if(!metodo || metodo.trim()===''){
+      return res.status(400).json({
+        error:'El metodo es obligatorio'
+      })
     }
 
-    const nuevo = {
-        id:pagos.length > 0 ? pagos[pagos.length - 1].id + 1 : 1, 
-        total,
-        metodo
-    }
+    const[result]= await db.query('INSERT INTO pago (total, metodo, Cliente_idCliente) VALUES (?, ?, ?)', [total, metodo, Cliente_idCliente])
+    const [newPago]= await db.query('SELECT * FROM pago WHERE idPago = ?', [result.insertId])
 
-    pagos.push(nuevo);
-  
-    res.status(201).json(nuevo);
-  };
-  
-  const updatePago = (req, res) => {
-    const id = parseInt(req.params.id);
-    const index = pagos.findIndex(p => p.id === id);
-  
-    if (index === -1) {
+    res.status(201).json(newPago[0])
+
+  } catch (error) {
+    console.error('Error al crear pago', error)
+    res.status(500).json({error:'Error al crear pago'})
+  }
+}
+
+const updatePago = async(req,res)=>{
+  try {
+    const id= parseInt(req.params.id)
+    const {nombre} = req.body
+    if(!nombre||nombre.trim()===''){
+      return res.status(400).json({
+        error:'El nombre es obligatorio'
+      })
+    }
+    
+    const [existing]= await db.query('SELECT * FROM pago WHERE idPago = ?', [id])
+
+    if(existing.length===0){
       return res.status(404).json({
-        error: 'Pago no encontrado',
-        message: `No existe un pago con el id ${id}`
-      });
-    }
-  
-    const {total, metodo} = req.body
-
-    if(!total || total.trim()===''){
-        return res.status(400).json({
-            error:"El total del pedido es obligatorio"
-        })
+        error:'Pago no encontrado'
+      })
     }
 
-    if (!metodo || metodo.trim() === '') {
-        return res.status(400).json({
-            error: "El metodo de pago es obligatorio"
-        })
-    }
-  
-    pagos[index] = {
-      ...pagos[index],
-      total,
-      metodo
-    };
-  
+    await db.query('UPDATE pago SET nombre = ? WHERE idPago = ?', [nombre, id])
+    const[updatePago]=await db.query('SELECT * FROM pago WHERE idPago = ?', [id])
+
     res.json({
-      message: 'Pago actualizado',
-      pago: pagos[index]
-    });
-  };
-  
-  const deletePago = (req, res) => {
-    const id = parseInt(req.params.id);
-    const index = pagos.findIndex(p => p.id === id);
-  
-    if (index === -1) {
+      message:'Usuario actualizado',
+      pago:updatePago[0]
+    })
+
+  } catch (error) {
+    console.error('Error al actualizar pago', error)
+    res.status(500).json({error:'Error al actualizar pago'})
+  }
+}
+
+const deletePago = async(req,res)=>{
+  try {
+    const id= parseInt(req.params.id)
+    const [existing]= await db.query('SELECT * FROM pago WHERE idPago = ?', [id])
+
+    if(existing.length===0){
       return res.status(404).json({
-        error: 'Pago no encontrado',
-        message: `No existe un pago con el id ${id}`
-      });
+        error:'Pago no encontrado'
+      })
     }
-  
-    const pagoEliminado = pagos.splice(index, 1);
-  
+
+    await db.query('DELETE FROM pago WHERE idPago = ?', [id])
+
     res.json({
-      message: 'Pago eliminado',
-      pago: pagoEliminado[0]
-    });
-  };
-  
-  module.exports = {
-    getPagos,
-    getPagoById,
-    createPago,
-    updatePago,
-    deletePago
-  };
+      message:"Pago eliminado",
+      pago:existing[0]
+    })
+
+  } catch (error) {
+    console.error('Error al eliminar pago', error)
+    res.status(500).json({error:'Error al eliminar pago'})
+  }
+}
+
+module.exports={
+  getPagos,
+  getPagoById,
+  createPago,
+  updatePago,
+  deletePago
+}
