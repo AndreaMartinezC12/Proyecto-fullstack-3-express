@@ -1,6 +1,9 @@
 const db=require('../config/db')
 
 const createPedido = async (req, res) => {
+
+  let connection;
+
   try {
     const{
       cliente,
@@ -8,8 +11,14 @@ const createPedido = async (req, res) => {
       pastel,
       pago
     } = req.body
+    
+    connection = await db.getConnection();
+    await connection.beginTransaction();
 
-    const[clienteResult] = await db.query(
+    console.log("TRANSACTION STARTED");
+
+    const[clienteResult] = 
+      await connection.query(
       `
       INSERT INTO cliente
       (
@@ -30,7 +39,8 @@ const createPedido = async (req, res) => {
 
     console.log("CLIENTE LISTO")
 
-    const [destinatarioResult] = await db.query(
+    const [destinatarioResult] = 
+      await connection.query(
       `
       INSERT INTO destinatario
       (
@@ -55,7 +65,8 @@ const createPedido = async (req, res) => {
 
     console.log("DESTINATARIO LISTO")
 
-    const [pastelResult] = await db.query(
+    const [pastelResult] = 
+      await connection.query(
       `
       INSERT INTO pastel
       (
@@ -81,7 +92,8 @@ const createPedido = async (req, res) => {
     const pastelId = pastelResult.insertId
     console.log("PASTEL LISTO")
 
-    const [pagoResult] = await db.query(
+    const [pagoResult] = 
+      await connection.query(
       `
         INSERT INTO pago
         (
@@ -99,7 +111,8 @@ const createPedido = async (req, res) => {
     const pagoId = pagoResult.insertId
     console.log("PAGO LISTO")
 
-    const [pedidoResult] = await db.query(
+    const [pedidoResult] = 
+      await connection.query(
       `
       INSERT INTO pedido
       (
@@ -122,6 +135,10 @@ const createPedido = async (req, res) => {
 
     console.log("PEDIDO LISTO")
 
+    await connection.commit();
+
+    console.log("TRANSACTION COMMITTED");
+
     res.status(201).json({
       message: "Pedido creado correctamente",
       pedidoId: pedidoResult.insertId
@@ -130,14 +147,31 @@ const createPedido = async (req, res) => {
   } catch (error) {
     console.log("Error creando pedido")
     console.log(error)
+
+    if (connection) {
+
+      await connection.rollback();
+
+      console.log("ROLLBACK EXECUTED");
+
+    }
+
     res.status(500).json({
       error: "Error creando pedido"
     })
     
   }
-}
+finally {
+    if (connection) {
 
- 
+      connection.release();
+
+    }
+
+  }
+
+};
+
 module.exports={
   createPedido
 }
