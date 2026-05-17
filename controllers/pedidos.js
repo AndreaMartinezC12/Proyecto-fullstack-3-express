@@ -12,10 +12,10 @@ const createPedido = async (req, res) => {
       pago
     } = req.body
     
-    connection = await db.getConnection();
-    await connection.beginTransaction();
+    connection = await db.getConnection()
+    await connection.beginTransaction()
 
-    console.log("TRANSACTION STARTED");
+    console.log("TRANSACTION STARTED")
 
     const[clienteResult] = 
       await connection.query(
@@ -135,9 +135,9 @@ const createPedido = async (req, res) => {
 
     console.log("PEDIDO LISTO")
 
-    await connection.commit();
+    await connection.commit()
 
-    console.log("TRANSACTION COMMITTED");
+    console.log("TRANSACTION COMMITTED")
 
     res.status(201).json({
       message: "Pedido creado correctamente",
@@ -150,9 +150,9 @@ const createPedido = async (req, res) => {
 
     if (connection) {
 
-      await connection.rollback();
+      await connection.rollback()
 
-      console.log("ROLLBACK EXECUTED");
+      console.log("ROLLBACK EXECUTED")
 
     }
 
@@ -164,14 +164,280 @@ const createPedido = async (req, res) => {
 finally {
     if (connection) {
 
-      connection.release();
+      connection.release()
 
     }
 
   }
 
-};
+}
+
+const getPedidoById = async (req, res) => {
+  try {
+    const pedidoId = req.params.id 
+    const [rows] = await db.query(
+      `
+      SELECT
+        pedido.id AS pedidoId,
+        pedido.Estado,
+
+        cliente.id AS clienteId,
+        cliente.Nombre AS clienteNombre,
+        cliente.email,
+        cliente.telefono,
+
+        destinatario.id AS destinatarioId,
+        destinatario.Nombre AS destinatarioNombre,
+        destinatario.calle,
+        destinatario.numero,
+        destinatario.colonia,
+        destinatario.fechaEntrega,
+
+        pastel.id AS pastelId,
+        pastel.tamano,
+        pastel.pan,
+        pastel.relleno,
+        pastel.extras,
+        pastel.betun,
+        pastel.decoracion,
+
+        pago.id AS pagoId,
+        pago.total,
+        pago.metodo
+
+      FROM pedido
+
+      JOIN cliente
+      ON pedido.cliente_id = cliente.id
+
+      JOIN destinatario
+      ON pedido.Destinatario_id = destinatario.id
+      
+      JOIN pastel
+      ON pedido.Pastel_id = pastel.id
+
+      JOIN pago
+      ON pedido.Pago_id = pago.id
+
+      WHERE pedido.id = ?
+      `,
+      [pedidoId]
+    )
+
+    if(rows.length === 0){
+      return res.status(404).json({
+        error: "Pedido no encontrado"
+      })
+    }
+
+    const row = rows[0]
+
+    const pedido ={
+      pedidoId:
+        row.pedidoId,
+      
+      estado:
+        row.estado,
+
+      cliente: {
+        id: row.clienteId,
+        nombre: row.clienteNombre,
+        email: row.email,
+        telefono:row.telefono
+      },
+
+      destinatario: {
+        id: row.destinatarioId,
+        nombre: row.destinatarioNombre,
+        calle: row.calle,
+        numero: row.numero,
+        colonia: row.colonia,
+        fechaEntrega: row.fechaEntrega
+      },
+
+      pastel: {
+        id: row.pastelId,
+        tamado: row.tamano,
+        pan: row.pan,
+        relleno: row.relleno,
+        extras: row.extras,
+        betun: row.betun,
+        decoracion: row.decoracion
+      },
+
+      pago: {
+        id: row.pagoId,
+        total: row.total,
+        metodo: row.metodo
+      }
+    }
+    res.json(pedido)
+
+  } catch (error) {
+    console.log("Error al obtener pedido")
+    console.log(error)
+    
+    res.status(500).json({
+      error: "Error encontrando pedido",
+      details: error.message
+    })
+  }
+}
+
+const getPedidoByNombre = async (req, res) => {
+  try {
+    const nombre = req.query.nombre
+
+    console.log("SI ENTRE")
+
+    const [rows] = 
+      await db.query(
+        `
+        SELECT
+          pedido.id AS pedidoId,
+          pedido.estado,
+
+          cliente.nombre AS clienteNombre,
+          cliente.email,
+          cliente.telefono,
+
+          destinatario.nombre AS destinatarioNombre,
+
+          pastel.tamano,
+
+          pago.total
+
+        FROM pedido
+
+        JOIN cliente
+        ON pedido.Cliente_id = cliente.id
+
+        JOIN destinatario 
+        ON pedido.Destinatario_id = destinatario.id
+
+        JOIN pastel
+        ON pedido.Pastel_id = pastel.id
+
+        JOIN pago
+        ON pedido.Pago_id = pago.id
+
+        WHERE cliente.Nombre LIKE ?
+        `,
+        [`%${nombre}%`]
+      )
+      res.json(rows)
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      error: "Error buscando el pedido",
+      details: error.message
+    })
+  }
+}
+
+const deletePedido = async (req, res) => {
+  let connection
+
+  try {
+    const pedidoId = req.params.id
+    connection = await db.getConnection()
+
+    await connection.beginTransaction()
+
+    const[pedidoRows] =
+      await connection.query(
+        `
+        SELECT
+          Cliente_id,
+          Destinatario_id,
+          Pastel_id,
+          Pago_id
+        FROM pedido
+
+        WHERE id = ?
+        `,
+
+        [pedidoId]
+      )
+
+    if(pedidoRows.length === 0){
+      return res.status(404).json({
+        error: "Ese pedido no existe"
+      })
+    }
+
+    const pedido = pedidoRows[0]
+
+    await connection.query(
+      `
+      DELETE FROM pedido
+      WHERE id = ?
+      `,
+      [pedidoId]
+    )
+
+    await connection.query(
+      `
+      DELETE FROM cliente
+      WHERE id = ?
+      `,
+      [pedido.Cliente_id]
+    )
+
+    await connection.query(
+      `
+      DELETE FROM destinatario
+      WHERE id = ?
+      `,
+      [pedido.Destinatario_id]
+    )
+
+    await connection.query(
+      `
+      DELETE FROM pastel
+      WHERE id = ?
+      `,
+      [pedido.Pastel_id]
+    )
+
+    await connection.query(
+      `
+      DELETE FROM pago
+      WHERE id = ?
+      `,
+      [pedido.Pago_id]
+    )
+
+    await connection.commit()
+
+    res.json({
+      message: "Pedido eliminado correctamente"
+    })
+
+
+  } catch (error) {
+    console.log(error)
+    if(connection){
+      await connection.rollback()
+    }
+
+    res.status(500).json({
+      error: "Error eliminando el pedido",
+      details: error.message
+    })
+  }
+  finally{
+    if(connection){
+      connection.release()
+    }
+  }
+}
+
 
 module.exports={
-  createPedido
+  createPedido,
+  getPedidoById,
+  getPedidoByNombre,
+  deletePedido
 }
