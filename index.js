@@ -4,10 +4,18 @@ const destinatarioRoutes= require('./routes/destinatarios')
 const pastelRoutes= require('./routes/pasteles')
 const pagoRoutes= require('./routes/pagos')
 const pedidoRoutes = require('./routes/pedido')
+const cors = require('cors')
 
 const db=require('./config/db')
 
 const app=express()
+app.use(
+  cors({
+    origin:
+      "http://localhost:5173"
+  })
+)
+
 app.use(express.json())
 
 app.use('/cliente', clienteRoutes)
@@ -15,6 +23,15 @@ app.use('/destinatario', destinatarioRoutes)
 app.use('/pastel', pastelRoutes)
 app.use('/pago', pagoRoutes)
 app.use('/pedido', pedidoRoutes)
+
+// const io = new Server(server, {
+//     cors:{
+//         origin: 'http://localhost:5173',
+//         methods:['GET','POST']
+//     }
+// })
+
+// socketHandler(io)
 
 const testDBConnectionAndStart = async() =>{
     try {
