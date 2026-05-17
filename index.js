@@ -3,6 +3,7 @@ const clienteRoutes= require('./routes/clientes')
 const destinatarioRoutes= require('./routes/destinatarios') 
 const pastelRoutes= require('./routes/pasteles')
 const pagoRoutes= require('./routes/pagos')
+const pedidoRoutes = require('./routes/pedido')
 
 const db=require('./config/db')
 
@@ -13,6 +14,7 @@ app.use('/cliente', clienteRoutes)
 app.use('/destinatario', destinatarioRoutes)
 app.use('/pastel', pastelRoutes)
 app.use('/pago', pagoRoutes)
+app.use('/pedido', pedidoRoutes)
 
 const testDBConnectionAndStart = async() =>{
     try {
