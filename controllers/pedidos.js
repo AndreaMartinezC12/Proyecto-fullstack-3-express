@@ -284,9 +284,28 @@ const getPedidoById = async (req, res) => {
   }
 }
 
-const getPedidoByNombre = async (req, res) => {
+const getPedidoByCliente = async (req, res) => {
   try {
-    const nombre = req.query.nombre
+    valor = " "
+    termino = " "
+
+    if(req.query.nombre){
+      valor = req.query.nombre
+      termino = "nombre"
+    }
+    else if(req.query.telefono){
+      valor=req.query.telefono
+      termino = "telefono"
+    }
+    else if(req.query.email){
+      valor=req.query.email
+      termino = "email"
+    }
+    else if(!valor || valor ===''){
+      return res.status(400).json({
+        error: "Por favor ingresa un termino de busqueda"
+      })
+    }
 
     const [rows] = 
       await db.query(
@@ -333,9 +352,9 @@ const getPedidoByNombre = async (req, res) => {
         JOIN pago
         ON pedido.Pago_id = pago.id
 
-        WHERE cliente.Nombre LIKE ?
+        WHERE cliente.${termino} LIKE ?
         `,
-        [`%${nombre}%`]
+        [`${valor}`]
       )
       if(rows.length === 0){
       return res.status(404).json({
@@ -637,7 +656,7 @@ const editPedido = async (req, res) => {
 module.exports={
   createPedido,
   getPedidoById,
-  getPedidoByNombre,
+  getPedidoByCliente,
   deletePedido,
   editPedido
 }

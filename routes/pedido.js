@@ -5,12 +5,12 @@ const router = express.Router()
 const{
     getPedidoById,
     createPedido,
-    getPedidoByNombre,
+    getPedidoByCliente,
     deletePedido,
     editPedido
 } = require('../controllers/pedidos')
 
-router.get("/search", getPedidoByNombre)
+router.get("/search", getPedidoByCliente)
 router.get('/:id', getPedidoById)
 router.post('/', createPedido)
 router.delete("/:id", deletePedido)
