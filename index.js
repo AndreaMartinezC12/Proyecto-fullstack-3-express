@@ -8,11 +8,21 @@ const cors = require('cors')
 
 const db=require('./config/db')
 
+// const app=express()
+// app.use(
+//   cors({
+//     origin:
+//       "http://localhost:5173"
+//   })
+// )
+
 const app=express()
 app.use(
   cors({
-    origin:
-      "http://localhost:5173"
+    origin:[
+        "http://localhost:5173",
+        "https://proyecto-fullstack-3-front.vercel.app"
+    ]
   })
 )
 
