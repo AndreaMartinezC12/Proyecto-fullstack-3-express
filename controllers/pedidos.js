@@ -252,7 +252,7 @@ const getPedidoById = async (req, res) => {
         calle: row.calle,
         numero: row.numero,
         colonia: row.colonia,
-        fechaEntrega: row.fechaEntrega
+        fechaEntrega: row.fechaEntrega?.toISOString().split("T")[0]
       },
 
       pastel: {
@@ -489,10 +489,155 @@ const deletePedido = async (req, res) => {
   }
 }
 
+const editPedido = async (req, res) => {
+  let connection
+  try {
+    const pedidoId = req.params.id
+    const{
+      cliente,
+      destinatario,
+      pastel,
+      pago
+    } = req.body
+
+    connection = await db.getConnection()
+    await connection.beginTransaction()
+
+    const[pedidoRows] = 
+      await connection.query(
+        `
+        SELECT
+          Cliente_id,
+          Destinatario_id,
+          Pastel_id,
+          Pago_id
+
+        FROM pedido
+
+        WHERE id = ?
+        `,
+        [pedidoId]
+      )
+
+    if(pedidoRows.length === 0){
+      return res.status(404).json({
+        error: "No existe ese pedido"
+      })
+    }
+
+    const pedido = pedidoRows[0]
+
+    if(cliente){
+      const fields = []
+      const values = []
+
+      for(const key in cliente){
+        fields.push(`${key} = ?`)
+        values.push(cliente[key])
+      }
+
+      values.push(pedido.Cliente_id)
+
+      await connection.query(
+        `
+        UPDATE cliente
+        SET ${fields.join(", ")}
+        WHERE id =?
+        `,
+        values
+      )
+    }
+
+    if(destinatario){
+      const fields = []
+      const values = []
+
+      for(const key in destinatario){
+        fields.push(`${key} = ?`)
+        values.push(destinatario[key])
+      }
+
+      values.push(pedido.Destinatario_id)
+
+      await connection.query(
+        `
+        UPDATE destinatario
+        SET ${fields.join(", ")}
+        WHERE id =?
+        `,
+        values
+      )
+    }
+
+    if(pastel){
+      const fields = []
+      const values = []
+
+      for(const key in pastel){
+        fields.push(`${key} = ?`)
+        values.push(pastel[key])
+      }
+
+      values.push(pedido.Pastel_id)
+
+      await connection.query(
+        `
+        UPDATE pastel
+        SET ${fields.join(", ")}
+        WHERE id =?
+        `,
+        values
+      )
+    }
+
+    if(pago){
+      const fields = []
+      const values = []
+
+      for(const key in pago){
+        fields.push(`${key} = ?`)
+        values.push(pago[key])
+      }
+
+      values.push(pedido.Pago_id)
+
+      await connection.query(
+        `
+        UPDATE pago
+        SET ${fields.join(", ")}
+        WHERE id =?
+        `,
+        values
+      )
+    }
+
+    await connection.commit()
+    res.json({
+      message: "Pedido actualizado correctamente"
+    })
+
+  } catch (error) {
+    console.log(error)
+    if(connection){
+      await connection.rollback()
+    }
+
+    res.status(500).json({
+      error:"Error al actualizar pedido. Vuelve a intentar.",
+      details: error.message
+    })
+  }
+  finally{
+    if(connection){
+      connection.release()
+    }
+  }
+}
 
 module.exports={
   createPedido,
   getPedidoById,
   getPedidoByNombre,
-  deletePedido
+  deletePedido,
+  editPedido
 }

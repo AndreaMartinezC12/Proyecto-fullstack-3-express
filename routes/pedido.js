@@ -6,13 +6,15 @@ const{
     getPedidoById,
     createPedido,
     getPedidoByNombre,
-    deletePedido
+    deletePedido,
+    editPedido
 } = require('../controllers/pedidos')
 
 router.get("/search", getPedidoByNombre)
 router.get('/:id', getPedidoById)
 router.post('/', createPedido)
 router.delete("/:id", deletePedido)
+router.patch("/:id", editPedido)
 
 
 module.exports = router
